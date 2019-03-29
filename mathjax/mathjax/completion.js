@@ -44,7 +44,7 @@ function getMostUsedTeXCmds(teX) {
   const res = {}
   let search
   let cmd
-  while (true) {
+  while (true) { // eslint-disable-line
     search = cmdRe.exec(copy)
     if (search === null) break
     cmd = search[1]

@@ -117,7 +117,7 @@ export default class InlineTeX extends Component {
     this.setState(
       newInternalState,
       () =>
-      newInternalState.editMode &&
+        newInternalState.editMode &&
       store.setReadOnly(true),
     )
   }

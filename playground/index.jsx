@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom'
 import BraftEditor from '../src'
 import ColorPicker from 'braft-extensions/dist/color-picker'
 import Emoticon, { defaultEmoticons } from 'braft-extensions/dist/emoticon'
+import { ContentUtils } from 'braft-utils'
 
 import 'braft-extensions/dist/emoticon.css'
 import 'braft-extensions/dist/color-picker.css'
@@ -10,7 +11,10 @@ import 'braft-extensions/dist/color-picker.css'
 const emoticons = defaultEmoticons.map(item => require(`braft-extensions/dist/assets/${item}`))
 
 import loadMathJax from '../mathjax/mathjax/loadMathJax'
-import { myKeyBindingFn } from '../mathjax/utils';
+import { myKeyBindingFn, findInlineTeXEntities } from '../mathjax/utils';
+import insertTeX from '../mathjax/modifiers/insertTeX';
+import InlineTeX from '../mathjax/components/InlineTeX';
+import initCompletion from '../mathjax/mathjax/completion'
 
 const defaultConfig = {
   macros: {},
@@ -19,8 +23,18 @@ const defaultConfig = {
 
 loadMathJax(defaultConfig);
 
+const store = {
+  getEditorState: undefined,
+  setEditorState: undefined,
+  getReadOnly: undefined,
+  setReadOnly: undefined,
+  getEditorRef: undefined,
+  completion: initCompletion(defaultConfig.completion, defaultConfig.macros),
+  teXToUpdate: {},
+}
+
 // 编写扩展模块
-const underdotExtension = {
+const underdotExtension = [{
   // 指定扩展类型
   type: 'inline-style',
   // 指定该扩展对哪些编辑器生效，不指定includeEditors则对所有编辑器生效
@@ -54,7 +68,19 @@ const underdotExtension = {
       }} />
     )
   }
-}
+},{
+  type: 'decorator',
+  // includeEditors, excludeEditors,
+  decorator: {
+    strategy: findInlineTeXEntities,
+    component: InlineTeX,
+    props: {
+      getStore: () => store,
+    }
+  }
+}]
+
+
 
 // BraftEditor.use([
 //   Emoticon({
@@ -78,6 +104,17 @@ class Demo extends React.Component {
       return this.state.editorState;
     })
 
+    store.getEditorState = () => this.state.editorState;
+    store.setEditorState = (editorState) => {
+      this.setState({
+        editorState,
+      })
+    }
+    store.getReadOnly = () => {}
+    store.setReadOnly = () => {}
+    store.getEditorRef = () => this.editor;
+    store.completion = store.completion(editorState)
+
     this.state = {
       count: 0,
       readOnly: false,
@@ -87,34 +124,15 @@ class Demo extends React.Component {
 
   }
 
-  handleKeyCommand = (command /* ,{ getEditorState, setEditorState } */) => {
-    if (command === 'insert-texblock') {
-      _insertTeX(true)
-      return 'handled'
-    }
-    if (command === 'insert-inlinetex') {
-      _insertTeX()
-      return 'handled'
-    }
-    // command de la forme 'enter-inline-math-<dir>-<entityKey>',
-    // lancée lorsque l'utilisateur déplace le curseur
-    // sur une formule à l'aide des flèches gauche/droite(dir:l ou r)
-    if (command.slice(0, 16) === 'update-inlinetex') {
-      const dir = command.slice(17, 18)
-      const entityKey = command.slice(19)
-      updateTeX(entityKey, dir)
-      return 'handled'
-    }
-    if (command.slice(0, 15) === 'update-texblock') {
-      const dir = command.slice(16, 17)
-      const blockKey = command.slice(18)
+  _insertTeX = (block = false) => {
+    this.setState({
+      editorState: insertTeX(this.state.editorState, block),
+    })
+  }
 
-      updateTeX(blockKey, dir)
-      return 'handled'
-    }
-    if (command.slice(0, 11) === 'insert-char') {
-      const char = command.slice(12)
-      insertChar(char)
+  handleKeyCommand = (command /* ,{ getEditorState, setEditorState } */) => {
+    if (command === 'insert-inlinetex') {
+      this._insertTeX()
       return 'handled'
     }
     return 'not-handled'
@@ -138,6 +156,8 @@ class Demo extends React.Component {
       <div>
         <div className="demo" id="demo">
           <BraftEditor
+            ref={(element) => { this.editor = element; }}
+            handleKeyCommand={this.handleKeyCommand}
             keyBindingFn={this.state.keyBindingFn}
             controls={controls}
             extendControls={[{

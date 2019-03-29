@@ -75,16 +75,16 @@ function insertInlineTeX(editorState) {
   }
 
   return EditorState.push(
-      editorState,
-      contentState,
-      'apply-entity',
-    )
+    editorState,
+    contentState,
+    'apply-entity',
+  )
 }
 
 function insertTeXBlock(editorState) {
   return customInsertAtomicBlock(
-      editorState, Map({ mathjax: true, teX: '' }),
-    )
+    editorState, Map({ mathjax: true, teX: '' }),
+  )
 }
 
 export default function insertTeX(editorState, block = false) {

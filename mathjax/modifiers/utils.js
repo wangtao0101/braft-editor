@@ -34,12 +34,12 @@ export function getNewBlockSelection(blockBefore, blockAfter, after) {
   }
 
   return SelectionState
-      .createEmpty(nextBlock.getKey())
-      .merge({
-        anchorOffset: offset,
-        focusOffset: offset,
-        hasFocus: true,
-      })
+    .createEmpty(nextBlock.getKey())
+    .merge({
+      anchorOffset: offset,
+      focusOffset: offset,
+      hasFocus: true,
+    })
 }
 
 export function removeBlock(contentState, block, after = 1) {
@@ -94,7 +94,7 @@ export function finishEdit(store) {
           newEditorState, newSelection,
         ),
       )
-      setTimeout(() => store.getEditorRef().focus(), 5)
+      // setTimeout(() => store.getEditorRef().focus(), 5)
     } else {
       store.setEditorState(newEditorState)
     }

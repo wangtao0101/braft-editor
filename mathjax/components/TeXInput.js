@@ -145,81 +145,81 @@ class TeXInput extends React.Component {
     }
 
     switch (key) {
-      case '$': {
-        if (inlineMode) {
-          evt.preventDefault()
-          onChange({ displaystyle: !displaystyle })
-        }
-        break
+    case '$': {
+      if (inlineMode) {
+        evt.preventDefault()
+        onChange({ displaystyle: !displaystyle })
       }
-      case 'Escape': {
+      break
+    }
+    case 'Escape': {
+      evt.preventDefault()
+      finishEdit(1)
+      break
+    }
+    case 'ArrowLeft': {
+      const atBegin = collapsed && end === 0
+      if (atBegin) {
+        evt.preventDefault()
+        finishEdit(0)
+      }
+      break
+    }
+    case 'ArrowRight': {
+      const atEnd = collapsed && start === teX.length
+      if (atEnd) {
         evt.preventDefault()
         finishEdit(1)
-        break
       }
-      case 'ArrowLeft': {
-        const atBegin = collapsed && end === 0
-        if (atBegin) {
-          evt.preventDefault()
-          finishEdit(0)
-        }
-        break
-      }
-      case 'ArrowRight': {
-        const atEnd = collapsed && start === teX.length
-        if (atEnd) {
-          evt.preventDefault()
-          finishEdit(1)
-        }
-        break
-      }
-      default:
-        if (
-          Object.prototype.hasOwnProperty
+      break
+    }
+    default:
+      if (
+        Object.prototype.hasOwnProperty
           .call(closeDelim, key)
-        ) {
-          // insertion d'un délimiteur
+      ) {
+        // insertion d'un délimiteur
+        evt.preventDefault()
+        this._insertText(key + closeDelim[key], -1)
+      } else if (
+        !cplDisable && ((
+          _isAlpha(key) &&
+          completion.status === 'auto'
+        ) || (
+          key === 'Tab' &&
+          this.completionList.length > 1
+        ) || (
+          completion.status === 'manual' &&
+          evt.ctrlKey &&
+          key === ' '
+        ))
+      ) {
+        // completion
+        this._handleCompletion(evt)
+      } else if (key === 'Tab') {
+        // gestion de l'indentation
+        const lines = teX.split('\n')
+        if (inlineMode || lines.length <= 1) {
+          // pas d'indentation dans ce cas
           evt.preventDefault()
-          this._insertText(key + closeDelim[key], -1)
-        } else if (
-          !cplDisable && ((
-            _isAlpha(key) &&
-            completion.status === 'auto'
-          ) || (
-            key === 'Tab' &&
-            this.completionList.length > 1
-          ) || (
-            completion.status === 'manual' &&
-            evt.ctrlKey &&
-            key === ' '
-          ))
-        ) {
-          // completion
-          this._handleCompletion(evt)
-        } else if (key === 'Tab') {
-          // gestion de l'indentation
-          const lines = teX.split('\n')
-          if (inlineMode || lines.length <= 1) {
-            // pas d'indentation dans ce cas
-            evt.preventDefault()
-            finishEdit(evt.shiftKey ? 0 : 1)
-          } else {
-            const {
-              text,
-              start: ns,
-              end: ne,
-            } = indent(
-              { text: teX, start, end },
-              evt.shiftKey,
-            )
-            evt.preventDefault()
-            onChange({ teX: text })
-            setTimeout(() => this.setState({
-              start: ns,
-              end: ne,
-            }), 0)
-          }
+          finishEdit(evt.shiftKey ? 0 : 1)
+        } else {
+          const {
+            text,
+            start: ns,
+            end: ne,
+          } = indent(
+            { text: teX, start, end },
+            evt.shiftKey,
+          )
+          evt.preventDefault()
+          onChange({ teX: text })
+          setTimeout(() => this.setState({
+            start: ns,
+            end: ne,
+          }), 0)
         }
+      }
     }
   }
 
@@ -292,8 +292,8 @@ class TeXInput extends React.Component {
   //   const $ = key === '$'
   //   const Shift = evt.shiftKey
   //   const Ctrl = evt.ctrlKey
-    // const isDelim = Object.prototype.hasOwnProperty
-    //   .call(closeDelim, key)
+  // const isDelim = Object.prototype.hasOwnProperty
+  //   .call(closeDelim, key)
 
   //   const toggleDisplaystyle = $ && inlineMode
 
