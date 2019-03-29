@@ -9,14 +9,63 @@ import 'braft-extensions/dist/color-picker.css'
 
 const emoticons = defaultEmoticons.map(item => require(`braft-extensions/dist/assets/${item}`))
 
-BraftEditor.use([
-  Emoticon({
-    emoticons: emoticons
-  }),
-  ColorPicker({
-    theme: 'dark'
-  })
-])
+import loadMathJax from '../mathjax/mathjax/loadMathJax'
+import { myKeyBindingFn } from '../mathjax/utils';
+
+const defaultConfig = {
+  macros: {},
+  completion: 'auto',
+}
+
+loadMathJax(defaultConfig);
+
+// 编写扩展模块
+const underdotExtension = {
+  // 指定扩展类型
+  type: 'inline-style',
+  // 指定该扩展对哪些编辑器生效，不指定includeEditors则对所有编辑器生效
+  // includeEditors: [],
+  // 指定扩展样式名，推荐使用全大写
+  name: 'UNDERDOT',
+  // 在编辑器工具栏中增加一个样式控制按钮，text可以为一个react组件
+  control: {
+    text: '着重号'
+  },
+  // 指定该扩展样式的CSS规则，请注意，IE/EDGE浏览器暂时不支持textEmphasis
+  style: {
+    textEmphasis: 'circle',
+    textEmphasisPosition: 'under',
+    WebkitTextEmphasis: 'circle',
+    WebkitTextEmphasisPosition: 'under'
+  },
+  importer: (nodeName, node) => {
+    // 指定html转换为editorState时，何种规则的内容将会附加上该扩展样式
+    // 如果编辑器在createEditorState时使用的是RAW数据，并且开启了stripPastedStyles，则可以不指定importer，因为不存在html转editorState的场景
+    return nodeName === 'span' && [].find.call(node.style, (styleName) => styleName.indexOf('text-emphasis') !== -1)
+  },
+  exporter: () => {
+    // 指定该样式在输出的html中如何呈现，对于inline-style类型的扩展可以不指定exporter，输出样式即为该扩展的style
+    return (
+      <span style={{
+        textEmphasis: 'circle',
+        textEmphasisPosition: 'under',
+        WebkitTextEmphasis: 'circle',
+        WebkitTextEmphasisPosition: 'under'
+      }} />
+    )
+  }
+}
+
+// BraftEditor.use([
+//   Emoticon({
+//     emoticons: emoticons
+//   }),
+//   ColorPicker({
+//     theme: 'dark'
+//   })
+// ])
+
+BraftEditor.use(underdotExtension)
 
 class Demo extends React.Component {
 
@@ -24,12 +73,51 @@ class Demo extends React.Component {
 
     super(props)
 
+    const editorState =  BraftEditor.createEditorState(null);
+    const keyBindingFn = myKeyBindingFn(() => {
+      return this.state.editorState;
+    })
+
     this.state = {
       count: 0,
       readOnly: false,
-      editorState: BraftEditor.createEditorState(null)
+      editorState,
+      keyBindingFn,
     }
 
+  }
+
+  handleKeyCommand = (command /* ,{ getEditorState, setEditorState } */) => {
+    if (command === 'insert-texblock') {
+      _insertTeX(true)
+      return 'handled'
+    }
+    if (command === 'insert-inlinetex') {
+      _insertTeX()
+      return 'handled'
+    }
+    // command de la forme 'enter-inline-math-<dir>-<entityKey>',
+    // lancée lorsque l'utilisateur déplace le curseur
+    // sur une formule à l'aide des flèches gauche/droite(dir:l ou r)
+    if (command.slice(0, 16) === 'update-inlinetex') {
+      const dir = command.slice(17, 18)
+      const entityKey = command.slice(19)
+      updateTeX(entityKey, dir)
+      return 'handled'
+    }
+    if (command.slice(0, 15) === 'update-texblock') {
+      const dir = command.slice(16, 17)
+      const blockKey = command.slice(18)
+
+      updateTeX(blockKey, dir)
+      return 'handled'
+    }
+    if (command.slice(0, 11) === 'insert-char') {
+      const char = command.slice(12)
+      insertChar(char)
+      return 'handled'
+    }
+    return 'not-handled'
   }
 
   handleChange = (editorState) => {
@@ -44,10 +132,14 @@ class Demo extends React.Component {
 
     const { readOnly, editorState } = this.state
 
+    const controls = ['bold', 'italic', 'underline', 'strike-through', 'text-color']
+
     return (
       <div>
         <div className="demo" id="demo">
           <BraftEditor
+            keyBindingFn={this.state.keyBindingFn}
+            controls={controls}
             extendControls={[{
               key: 'log-html',
               type: 'button',
