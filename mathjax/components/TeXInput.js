@@ -105,10 +105,15 @@ class TeXInput extends React.Component {
 
   componentDidMount() {
     const { start, end } = this.state
+    const copyThis = this
     setTimeout(() => {
-      this.teXinput.focus()
-      this.teXinput.setSelectionRange(start, end)
+      copyThis.teXinput.focus()
+      copyThis.teXinput.setSelectionRange(start, end)
     }, 0)
+  }
+
+  componentWillUnmount() {
+    console.log('asdf')
   }
 
   shouldComponentUpdate(nextProps, nextState) {
@@ -405,7 +410,9 @@ class TeXInput extends React.Component {
         onSelect={this._onSelect}
         onBlur={this.onBlur}
         onKeyDown={this.handleKey}
-        ref={(teXinput) => { this.teXinput = teXinput }}
+        ref={(teXinput) => {
+          this.teXinput = teXinput
+        }}
         style={style}
       />
     )

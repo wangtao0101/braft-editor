@@ -100,7 +100,7 @@ export default class TeXBlock extends Component {
       <MathJaxNode>
         {teX}
       </MathJaxNode>
-      )
+    )
 
     const style = styles[(editMode ? 'preview' : 'rendered')]
     return (

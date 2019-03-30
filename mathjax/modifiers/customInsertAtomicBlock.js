@@ -40,7 +40,7 @@ export default function customInsertAtomicBlock(
   const fragmentArray = [
     new ContentBlock({
       key: genKey(),
-      type: 'atomic',
+      type: 'blockTex',
       // text: character,
       // characterList: List(Repeat(charData, character.length)),
       data,

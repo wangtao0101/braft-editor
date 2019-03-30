@@ -88,12 +88,14 @@ export function finishEdit(store) {
       needRemove ? 'remove-range' : 'update-math',
     )
 
+    newEditorState.convertOptions = store.getEditorState().convertOptions
+
     if (newSelection !== undefined) {
-      store.setEditorState(
-        EditorState.forceSelection(
-          newEditorState, newSelection,
-        ),
+      let  lastastNewEditorState = EditorState.forceSelection(
+        newEditorState, newSelection,
       )
+      lastastNewEditorState.convertOptions = store.getEditorState().convertOptions
+      store.setEditorState(lastastNewEditorState)
       // setTimeout(() => store.getEditorRef().focus(), 5)
     } else {
       store.setEditorState(newEditorState)
