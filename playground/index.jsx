@@ -38,17 +38,38 @@ const store = {
 
 let initFisrtCompletion = false
 
+const _insertTeX = (block = false) => {
+  const originEditorState = store.getEditorState()
+  const editorState = insertTeX(originEditorState, block)
+  store.setEditorState(editorState)
+}
+
 const mathjaxExtension = [
   {
-    type: 'decorator',
-    // includeEditors, excludeEditors,
-    decorator: {
-      strategy: findInlineTeXEntities,
-      component: InlineTeX,
-      props: {
-        getStore: () => store,
-      },
+    type: 'entity',
+    name: 'INLINETEX',
+    control: (props) => ({
+      key: 'inline-tex',
+      type: 'button',
+      text: '内联公式',
+      onClick: () => _insertTeX(),
+    }),
+    component: (props) => {
+      // 通过entityKey获取entity实例，关于entity实例请参考https://github.com/facebook/draft-js/blob/master/src/model/entity/DraftEntityInstance.js
+      const entity = props.contentState.getEntity(props.entityKey)
+      // 通过entity.getData()获取该entity的附加数据
+      const getStore = () => store
+      return <InlineTeX {...props} getStore={getStore} />
     },
+    data: {
+      getStore: () => store,
+      teX: '',
+    },
+    exporter: (entityObject, originalText) => {
+      // 注意此处的entityObject并不是一个entity实例，而是一个包含type、mutability和data属性的对象
+      const { foo } = entityObject.data
+      return <span data-foo={foo} className="keyboard-item">{originalText}</span>
+    }
   },
   {
     type: 'block',
@@ -85,13 +106,6 @@ const mathjaxExtension = [
   },
 ]
 
-const _insertTeX = (block = false) => {
-  const originEditorState = store.getEditorState()
-  const editorState = insertTeX(originEditorState, block)
-  // editorState.convertOptions = originEditorState.convertOptions
-  store.setEditorState(editorState)
-}
-
 const handleKeyCommand = (
   command /* ,{ getEditorState, setEditorState } */,
 ) => {
@@ -113,9 +127,9 @@ class Demo extends React.Component {
     super(props)
 
     const editorState = BraftEditor.createEditorState(
-      JSON.parse(
-        '{"blocks":[{"key":"darpv","text":" \\t\\t ","type":"unstyled","depth":0,"inlineStyleRanges":[],"entityRanges":[{"offset":1,"length":2,"key":0}],"data":{}}],"entityMap":{"0":{"type":"INLINETEX","mutability":"IMMUTABLE","data":{"teX":"aasdfasdf","displaystyle":false}}}}',
-      ),
+      // JSON.parse(
+      //   '{"blocks":[{"key":"darpv","text":" \\t\\t ","type":"unstyled","depth":0,"inlineStyleRanges":[],"entityRanges":[{"offset":1,"length":2,"key":0}],"data":{}}],"entityMap":{"0":{"type":"INLINETEX","mutability":"IMMUTABLE","data":{"teX":"aasdfasdf","displaystyle":false}}}}',
+      // ),
     )
     const keyBindingFn = myKeyBindingFn(() => {
       return this.state.editorState
